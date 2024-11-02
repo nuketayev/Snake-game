@@ -62,6 +62,9 @@ def next_turn(snake, food):
     if x == food.coordinates[0] and y == food.coordinates[1]:
         global score
         score += 1
+        global SPEED
+        if (score % 5) == 0 and SPEED !=40:
+            SPEED -= 20
         label.config(text="Score: {}".format(score))
         canvas.delete("food")
         food = Food(snake)
@@ -116,13 +119,14 @@ def game_over():
     canvas.create_text(canvas.winfo_width()/2, canvas.winfo_height()/2, font=('consolas',70),text="GAME OVER",fill="RED",tag="gameover")
 
 def restart():
-    global snake, food, score, direction, game_is_over
+    global snake, food, score, direction, game_is_over, SPEED
     window.after_cancel(game_loop)
     canvas.delete(ALL)
 
     score = 0
     direction = 'down'
     game_is_over = 0
+    SPEED = 100
 
     label.config(text="Score: {}".format(score))
 
