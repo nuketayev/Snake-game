@@ -1,14 +1,18 @@
 from tkinter import *
 import random
 
-GAME_WIDTH = 1400
-GAME_HEIGHT = 1000
-SPEED = 60
+NUM_BOXES_WIDTH = 30
+NUM_BOXES_HEIGHT = 20
 SPACE_SIZE = 50
+GAME_WIDTH = NUM_BOXES_WIDTH * SPACE_SIZE
+GAME_HEIGHT = NUM_BOXES_HEIGHT * SPACE_SIZE
+
+SPEED = 100
+
 BODY_PARTS = 3
 SNAKE_COLOR = "Blue"
 FOOD_COLOR = "RED"
-BACKGROUND_COLOR = "Black"
+BACKGROUND_COLOR = "black"
 
 
 class Snake:
@@ -25,16 +29,19 @@ class Snake:
             self.squares.append(square)
 
 class Food:
-    def __init__(self):
-        x = random.randint(0, int(GAME_WIDTH/SPACE_SIZE)-1) * SPACE_SIZE
-        y = random.randint(0, int(GAME_HEIGHT/SPACE_SIZE)-1) * SPACE_SIZE
+    def __init__(self, snake):
+        while True:
+            x = random.randint(0, int(GAME_WIDTH/SPACE_SIZE)-1) * SPACE_SIZE
+            y = random.randint(0, int(GAME_HEIGHT/SPACE_SIZE)-1) * SPACE_SIZE
+            self.coordinates = [x,y]
 
-        self.coordinates = [x,y]
+            if self.coordinates not in snake.coordinates:
+                break
 
         canvas.create_oval(x, y, x+SPACE_SIZE, y+SPACE_SIZE, fill=FOOD_COLOR, tag="food")
 
 def next_turn(snake, food):
-    global game_is_over
+    global game_is_over, game_loop
 
     x, y = snake.coordinates[0]
 
@@ -57,7 +64,7 @@ def next_turn(snake, food):
         score += 1
         label.config(text="Score: {}".format(score))
         canvas.delete("food")
-        food = Food()
+        food = Food(snake)
     
     else:
         del snake.coordinates[-1]
@@ -66,15 +73,14 @@ def next_turn(snake, food):
 
     if check_collisions(snake):
         game_over()
-
-    window.after(SPEED, next_turn, snake, food)
+    else:
+        game_loop = window.after(SPEED, next_turn, snake, food)
 
 def check_collisions(snake):
     x, y = snake.coordinates[0]
 
     if x < 0 or x >= GAME_WIDTH:
         return True
-    
     if y < 0 or y >= GAME_HEIGHT:
         return True
 
@@ -83,7 +89,6 @@ def check_collisions(snake):
             return True
 
     return False
-
 
 def change_direction(new_direction):
     global direction
@@ -110,25 +115,51 @@ def game_over():
     canvas.delete(ALL)
     canvas.create_text(canvas.winfo_width()/2, canvas.winfo_height()/2, font=('consolas',70),text="GAME OVER",fill="RED",tag="gameover")
 
+def restart():
+    global snake, food, score, direction, game_is_over
+    window.after_cancel(game_loop)
+    canvas.delete(ALL)
+
+    score = 0
+    direction = 'down'
+    game_is_over = 0
+
+    label.config(text="Score: {}".format(score))
+
+    snake = Snake()
+    food = Food(snake)
+
+    next_turn(snake, food)
+
+
 window = Tk()
 window.title("Snake")
+window.config(bg="#282828")
 window.resizable(False, False)
 
 score = 0
 game_is_over = 0
 direction = 'down'
+game_loop = None
 
-label = Label(text="Score: {}".format(score), font=('consolas',40))
-label.pack()
 
 canvas = Canvas(window, bg=BACKGROUND_COLOR, height=GAME_HEIGHT, width=GAME_WIDTH)
-canvas.pack()
+canvas.pack(side="bottom")
+
+label = Label(window, text="Score: {}".format(score), font=('consolas', 45), bg="#282828", fg="Gold")
+label.pack(side="left")
+
+restart_button = Button(window, text="Restart", command=restart, bg="black", fg="white")
+restart_button.pack(side="right")
+
+
+
 
 window.update()
 
 x = int((window.winfo_screenwidth() / 2) - (GAME_WIDTH / 2))
-y = int((window.winfo_screenheight() / 2 ) - (GAME_HEIGHT / 2))
-window.geometry("{}x{}+{}+{}".format(GAME_WIDTH, GAME_HEIGHT, x, y))
+y = int((window.winfo_screenheight() / 2 ) - ((GAME_HEIGHT+100) / 2))
+window.geometry("{}x{}+{}+{}".format(GAME_WIDTH, GAME_HEIGHT+100, x, y))
 
 window.bind('<Left>', lambda event: change_direction('left'))
 window.bind('<Right>', lambda event: change_direction('right'))
@@ -141,7 +172,7 @@ window.bind('<w>', lambda event: change_direction('up'))
 window.bind('<s>', lambda event: change_direction('down'))
 
 snake = Snake()
-food = Food()
+food = Food(snake)
 
 next_turn(snake, food)
 
